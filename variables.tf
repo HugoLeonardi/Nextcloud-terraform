@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "project_name" {
   description = "Nom du projet (utilisé pour nommer les ressources)"
   type        = string
-  default     = "nextcloud-bts"
+  default     = "nextcloud-sio"
 }
 
 # --- Réseau ---
@@ -71,7 +71,7 @@ variable "db_password" {
   description = "Mot de passe BDD - NE PAS mettre en dur en production !"
   type        = string
   sensitive   = true # Pour masquer le mot de passe dans les logs et outputs
-  default     = "ChangeMe123!" 
+  default     = "password123" # C'est un laboratoire ^_^
 }
 
 variable "db_instance_class" {
