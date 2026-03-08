@@ -19,12 +19,12 @@ output "ssh_connection" {
 }
 
 output "rds_endpoint" {
-  description = "Endpoint de la base de données (interne uniquement)"
+  description = "Endpoint de la base de donnees (interne uniquement)"
   value       = aws_db_instance.nextcloud.address
 }
 
 output "s3_bucket_name" {
-  description = "Nom du bucket S3 utilisé pour le stockage"
+  description = "Nom du bucket S3 utilise pour le stockage"
   value       = aws_s3_bucket.nextcloud_storage.bucket
 }
 

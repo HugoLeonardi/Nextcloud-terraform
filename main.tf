@@ -172,7 +172,7 @@ resource "aws_security_group" "ec2" {
 # Security Group pour RDS (MySQL)
 resource "aws_security_group" "rds" {
   name        = "${var.project_name}-sg-rds"
-  description = "Security Group pour la base de données MySQL"
+  description = "Security Group pour la base de donnees MySQL"
   vpc_id      = aws_vpc.main.id
 
   # MySQL uniquement depuis le serveur EC2

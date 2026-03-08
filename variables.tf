@@ -1,36 +1,36 @@
 variable "aws_region" {
-  description = "Région AWS utilisée"
+  description = "Region AWS utilisee"
   type        = string
   default     = "eu-west-3"
 }
 
 variable "project_name" {
-  description = "Nom du projet (utilisé pour nommer les ressources)"
+  description = "Nom du projet (utilise pour nommer les ressources)"
   type        = string
   default     = "nextcloud-sio"
 }
 
-# --- Réseau ---
+# --- Reseau ---
 variable "vpc_cidr" {
-  description = "Plage d'adresses IP du réseau privé virtuel"
+  description = "Plage d'adresses IP du reseau prive virtuel"
   type        = string
   default     = "10.0.0.0/16"
 }
 
 variable "public_subnet_cidr" {
-  description = "Sous-réseau public (EC2 accessible depuis Internet)"
+  description = "Sous-reseau public (EC2 accessible depuis Internet)"
   type        = string
   default     = "10.0.1.0/24"
 }
 
 variable "private_subnet_cidr_1" {
-  description = "Sous-réseau privé 1 (RDS - pas accessible depuis Internet)"
+  description = "Sous-reseau prive 1 (RDS - pas accessible depuis Internet)"
   type        = string
   default     = "10.0.2.0/24"
 }
 
 variable "private_subnet_cidr_2" {
-  description = "Sous-réseau privé 2 (RDS exige 2 AZ minimum)"
+  description = "Sous-reseau prive 2 (RDS exige 2 AZ minimum)"
   type        = string
   default     = "10.0.3.0/24"
 }
@@ -49,20 +49,20 @@ variable "ami_id" {
 }
 
 variable "key_pair_name" {
-  description = "Nom de la clé SSH (à créer dans la console AWS)"
+  description = "Nom de la cle SSH (à creer dans la console AWS)"
   type        = string
   default     = "nextcloud-key"
 }
 
 # --- RDS ---
 variable "db_name" {
-  description = "Nom de la base de données Nextcloud"
+  description = "Nom de la base de donnees Nextcloud"
   type        = string
   default     = "nextcloud"
 }
 
 variable "db_username" {
-  description = "Utilisateur de la base de données"
+  description = "Utilisateur de la base de donnees"
   type        = string
   default     = "nextcloud_user"
 }
