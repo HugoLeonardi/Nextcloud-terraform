@@ -266,6 +266,7 @@ ssh -i ~/.ssh/nextcloud-key.pem ec2-user@[IP_EC2]
 
 # Vérifier les logs d'installation
 sudo cat /var/log/cloud-init-output.log
+sudo cat /var/log/userdata.log
 
 # Vérifier qu'Apache tourne
 sudo systemctl status httpd
