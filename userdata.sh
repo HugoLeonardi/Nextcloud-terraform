@@ -129,5 +129,5 @@ sudo -u apache php /var/www/html/nextcloud/occ config:system:set \
 
 sudo -u apache php /var/www/html/nextcloud/occ config:system:set \
   trusted_domains 1 \
-  --value="$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
+  --value="$$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
 
