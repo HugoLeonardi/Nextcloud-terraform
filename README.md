@@ -242,22 +242,6 @@ ingress {
 
 ---
 
-## 💰 Coûts estimés
-
-> ⚠️ Ces tarifs sont indicatifs (région eu-west-3, avril 2024)
-
-| Ressource | Type | Coût estimé/mois |
-|---|---|---|
-| **EC2** | t3.small | ~15 € |
-| **RDS** | db.t3.micro | ~25 € |
-| **S3** | 10 Go stockage | ~0.25 € |
-| **Transfert réseau** | Sortant | Variable |
-| **TOTAL** | | **~40 €/mois** |
-
-> 💡 **Astuce** : Utilisez `terraform destroy` quand vous n'utilisez pas  
-> l'infrastructure pour éviter les frais inutiles !
-
----
 
 ## 🗑️ Suppression de l'infrastructure
 
@@ -282,6 +266,7 @@ ssh -i ~/.ssh/nextcloud-key.pem ec2-user@[IP_EC2]
 
 # Vérifier les logs d'installation
 sudo cat /var/log/cloud-init-output.log
+sudo cat /var/log/userdata.log
 
 # Vérifier qu'Apache tourne
 sudo systemctl status httpd
@@ -317,9 +302,9 @@ aws sts get-caller-identity
 
 ## 👤 Auteur
 
-**[Votre Nom]**  
-BTS SIO SISR - [Votre établissement]  
-Année scolaire 2024-2025
+**Hugo Léonardi**  
+BTS SIO SISR - Aurlom
+2024-2026
 
 ---
 
