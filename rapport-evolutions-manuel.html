@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Évolutions manuelles – Nextcloud AWS</title>
+  <style>
+    :root {
+      --primary:  #0f4c81;
+      --accent:   #1a7fc1;
+      --light:    #e8f4fd;
+      --bg:       #f5f7fa;
+      --border:   #dde3ea;
+      --code-bg:  #1e2228;
+      --code-fg:  #abb2bf;
+      --radius:   8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      color: #222;
+      line-height: 1.7;
+    }
+
+    /* HEADER */
+    header {
+      background: linear-gradient(135deg, #0f4c81 0%, #1a7fc1 100%);
+      color: #fff;
+      padding: 48px 60px 40px;
+    }
+    header .label {
+      font-size: .8rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      opacity: .75;
+      margin-bottom: 10px;
+    }
+    header h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+    header .subtitle { font-size: 1.05rem; opacity: .85; }
+    header .meta {
+      display: flex;
+      gap: 32px;
+      margin-top: 28px;
+      font-size: .88rem;
+      opacity: .8;
+    }
+    header .meta span::before { content: '• '; }
+
+    /* LAYOUT */
+    .container { max-width: 960px; margin: 0 auto; padding: 48px 24px; }
+
+    /* TOC */
+    .toc {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 32px;
+      margin-bottom: 48px;
+    }
+    .toc h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: .08em; color: var(--primary); margin-bottom: 16px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin-bottom: 6px; }
+    .toc a { color: var(--accent); text-decoration: none; font-weight: 500; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* SECTION */
+    section { margin-bottom: 64px; }
+    section > h2 {
+      font-size: 1.5rem;
+      color: var(--primary);
+      border-left: 4px solid var(--accent);
+      padding-left: 14px;
+      margin-bottom: 8px;
+    }
+    .section-intro { color: #555; margin-bottom: 28px; font-size: .97rem; }
+
+    /* CARDS */
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      margin-bottom: 24px;
+    }
+    .card h3 {
+      font-size: 1.1rem;
+      color: var(--primary);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card h3 .badge {
+      background: var(--light);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      font-size: .72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .card p { color: #444; margin-bottom: 10px; font-size: .95rem; }
+
+    /* STEPS */
+    .steps { list-style: none; padding-left: 0; margin-top: 8px; }
+    .steps > li {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      align-items: flex-start;
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 32px; height: 32px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: .85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .step-body { flex: 1; padding-top: 4px; font-size: .95rem; color: #333; }
+    .step-body strong { color: var(--primary); }
+    .step-body .nav {
+      display: inline-block;
+      background: #f0f4f8;
+      border: 1px solid #c8d5e0;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: .85rem;
+      font-family: monospace;
+      color: #1a4a6b;
+      margin: 2px 0;
+    }
+    .step-body .nav .sep { color: #888; margin: 0 4px; }
+
+    /* CODE */
+    pre {
+      background: var(--code-bg);
+      color: var(--code-fg);
+      border-radius: var(--radius);
+      padding: 18px 22px;
+      font-size: .85rem;
+      line-height: 1.65;
+      overflow-x: auto;
+      margin-top: 12px;
+      margin-bottom: 4px;
+    }
+    pre .comment { color: #5c6370; font-style: italic; }
+    pre .string  { color: #98c379; }
+    pre .cmd     { color: #61afef; }
+    .code-label {
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #888;
+      margin-top: 18px;
+      margin-bottom: 4px;
+    }
+
+    /* INLINE CODE */
+    code {
+      background: #eef2f7;
+      border: 1px solid #d0dae4;
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: .88em;
+      font-family: monospace;
+      color: #c0392b;
+    }
+
+    /* ALERTS */
+    .alert {
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      font-size: .9rem;
+      margin-top: 16px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .alert.info    { background: #e8f4fd; border-left: 4px solid var(--accent); color: #1a4a6b; }
+    .alert.warning { background: #fff8e1; border-left: 4px solid #f59e0b; color: #7c5b00; }
+    .alert.success { background: #ecfdf5; border-left: 4px solid #10b981; color: #065f46; }
+    .alert .icon   { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+
+    /* TABLE */
+    table { width: 100%; border-collapse: collapse; font-size: .92rem; margin-top: 14px; }
+    th { background: var(--primary); color: #fff; text-align: left; padding: 10px 14px; font-weight: 600; }
+    td { padding: 9px 14px; border-bottom: 1px solid var(--border); color: #444; }
+    tr:nth-child(even) td { background: #f9fafb; }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 32px;
+      font-size: .82rem;
+      color: #aaa;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="label">BTS SIO – Option SISR &nbsp;|&nbsp; Procédures manuelles</div>
+  <h1>Évolutions manuelles – Nextcloud sur AWS</h1>
+  <div class="subtitle">Configuration via la console AWS et SSH, sans modification Terraform</div>
+  <div class="meta">
+    <span>Hugo Léonardi</span>
+    <span>Région : eu-west-3 (Paris)</span>
+    <span>Instance : EC2 t3.small – Amazon Linux 2023</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="toc">
+    <h2>Sommaire</h2>
+    <ol>
+      <li><a href="#eip">Adresse IP Élastique (Elastic IP)</a></li>
+      <li><a href="#tls">Certificat TLS/SSL avec Let's Encrypt</a></li>
+      <li><a href="#cloudwatch">Supervision avec Amazon CloudWatch</a></li>
+    </ol>
+  </div>
+
+  <!-- ====================================================
+       1. ELASTIC IP
+  ===================================================== -->
+  <section id="eip">
+    <h2>1. Adresse IP Élastique (Elastic IP)</h2>
+    <p class="section-intro">
+      Une Elastic IP est une adresse IPv4 publique <strong>fixe</strong> allouée sur le compte AWS.
+      Sans elle, l'IP de l'instance EC2 change à chaque redémarrage, rendant Nextcloud inaccessible.
+      Toute l'opération se fait dans la <strong>console AWS</strong>, sans toucher au serveur.
+    </p>
+
+    <div class="card">
+      <h3>Étape 1 – Allouer une Elastic IP <span class="badge">Console AWS</span></h3>
+      <ul class="steps">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-body">
+            Ouvrir la <strong>Console AWS</strong> et se rendre dans :
+            <br><span class="nav">EC2 <span class="sep">›</span> Réseau et sécurité <span class="sep">›</span> Adresses IP élastiques</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-body">
+            Cliquer sur <strong>« Allouer une adresse IP élastique »</strong>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-body">
+            Laisser les paramètres par défaut (pool d'adresses Amazon).
+            Cliquer sur <strong>« Allouer »</strong>.
+            Une nouvelle adresse IPv4 publique apparaît dans la liste.
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Étape 2 – Associer l'Elastic IP à l'instance EC2 <span class="badge">Console AWS</span></h3>
+      <ul class="steps">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-body">
+            Sélectionner l'adresse nouvellement allouée dans la liste.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-body">
+            Cliquer sur <strong>« Actions »</strong> puis <strong>« Associer une adresse IP élastique »</strong>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-body">
+            Dans le champ <strong>« Instance »</strong>, sélectionner l'instance EC2 Nextcloud
+            (<code>nextcloud-sio-server</code>).
+          </div>
+        </li>
+        <li>
+          <div class="step-num">4</div>
+          <div class="step-body">
+            Cliquer sur <strong>« Associer »</strong>.
+            L'ancienne IP dynamique de l'instance est immédiatement remplacée par l'Elastic IP.
+          </div>
+        </li>
+      </ul>
+      <div class="alert success">
+        <span class="icon">✓</span>
+        <span>Nextcloud est maintenant accessible via l'Elastic IP. Cette adresse reste la même
+        même après un arrêt/redémarrage de l'instance.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Étape 3 – Mettre à jour les trusted_domains Nextcloud <span class="badge">SSH</span></h3>
+      <p>
+        Nextcloud refuse les connexions depuis un domaine ou une IP non déclarée.
+        Après changement d'IP, il faut mettre à jour la configuration.
+      </p>
+      <div class="code-label">Se connecter en SSH à l'instance</div>
+<pre><span class="cmd">ssh</span> -i nextcloud-key.pem ec2-user@&lt;ELASTIC_IP&gt;</pre>
+
+      <div class="code-label">Mettre à jour le trusted_domain dans Nextcloud</div>
+<pre><span class="comment"># Ajouter l'Elastic IP comme domaine de confiance</span>
+<span class="cmd">sudo</span> -u apache php /var/www/html/nextcloud/occ \
+  config:system:set trusted_domains 1 \
+  --value=<span class="string">"&lt;ELASTIC_IP&gt;"</span></pre>
+
+      <div class="alert warning">
+        <span class="icon">⚠</span>
+        <span>Une Elastic IP <strong>non associée</strong> à une instance est facturée
+        (~0,005 $/heure). Penser à la libérer avec <code>terraform destroy</code>
+        ou depuis la console si l'infrastructure est supprimée.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================
+       2. TLS/SSL
+  ===================================================== -->
+  <section id="tls">
+    <h2>2. Certificat TLS/SSL avec Let's Encrypt</h2>
+    <p class="section-intro">
+      Let's Encrypt délivre des certificats TLS gratuits et automatiquement renouvelables.
+      L'outil <strong>Certbot</strong> s'occupe d'obtenir le certificat et de configurer Apache.
+      Cette procédure se fait entièrement en SSH sur l'instance EC2.
+      Un <strong>nom de domaine</strong> pointant vers l'Elastic IP est obligatoire.
+    </p>
+
+    <div class="card">
+      <h3>Prérequis <span class="badge">Avant de commencer</span></h3>
+      <table>
+        <thead><tr><th>Condition</th><th>Comment vérifier</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Elastic IP associée à l'instance</td>
+            <td>Console AWS → EC2 → Adresses IP élastiques</td>
+          </tr>
+          <tr>
+            <td>Enregistrement DNS de type A configuré</td>
+            <td><code>nslookup nextcloud.mondomaine.fr</code> → doit retourner l'Elastic IP</td>
+          </tr>
+          <tr>
+            <td>Port 80 ouvert dans le Security Group EC2</td>
+            <td>Console AWS → EC2 → Groupes de sécurité → <code>nextcloud-sio-sg-ec2</code></td>
+          </tr>
+          <tr>
+            <td>Port 443 ouvert dans le Security Group EC2</td>
+            <td>Même vérification — règle entrante HTTPS 0.0.0.0/0</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Étape 1 – Configurer l'enregistrement DNS <span class="badge">Registrar</span></h3>
+      <ul class="steps">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-body">
+            Se connecter à l'interface du registrar du domaine (OVH, Gandi, Cloudflare…).
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-body">
+            Créer un enregistrement DNS de type <strong>A</strong> :
+            <br>
+            <table style="margin-top:10px;width:auto">
+              <thead><tr><th>Champ</th><th>Valeur</th></tr></thead>
+              <tbody>
+                <tr><td>Type</td><td><code>A</code></td></tr>
+                <tr><td>Nom / Sous-domaine</td><td><code>nextcloud</code> (ou <code>@</code> pour le domaine racine)</td></tr>
+                <tr><td>Valeur</td><td><code>&lt;ELASTIC_IP&gt;</code></td></tr>
+                <tr><td>TTL</td><td><code>300</code> (5 min pour les tests)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-body">
+            Attendre la propagation DNS (quelques minutes à 1 heure).
+            Vérifier avec :
+            <pre><span class="cmd">nslookup</span> nextcloud.mondomaine.fr</pre>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Étape 2 – Vérifier le port 443 dans le Security Group <span class="badge">Console AWS</span></h3>
+      <ul class="steps">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-body">
+            Aller dans :
+            <span class="nav">EC2 <span class="sep">›</span> Groupes de sécurité <span class="sep">›</span> nextcloud-sio-sg-ec2</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-body">
+            Onglet <strong>« Règles entrantes »</strong> → vérifier qu'une règle <strong>HTTPS (port 443)</strong> existe.
+            Si absente : cliquer sur <strong>« Modifier les règles entrantes »</strong> → <strong>« Ajouter une règle »</strong>
+            → Type : HTTPS, Source : 0.0.0.0/0 → <strong>« Enregistrer »</strong>.
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Étape 3 – Installer Certbot et obtenir le certificat <span class="badge">SSH</span></h3>
+
+      <div class="code-label">Se connecter en SSH</div>
+<pre><span class="cmd">ssh</span> -i nextcloud-key.pem ec2-user@&lt;ELASTIC_IP&gt;</pre>
+
+      <div class="code-label">Installer Certbot</div>
+<pre><span class="comment"># Installation de Certbot et son module Apache</span>
+<span class="cmd">sudo</span> dnf install -y certbot python3-certbot-apache</pre>
+
+      <div class="code-label">Obtenir le certificat et configurer Apache automatiquement</div>
+<pre><span class="comment"># Certbot contacte Let's Encrypt, prouve la propriété du domaine
+# et configure Apache (VirtualHost HTTPS + redirection HTTP→HTTPS)</span>
+<span class="cmd">sudo</span> certbot --apache \
+  --email admin@mondomaine.fr \
+  --domain nextcloud.mondomaine.fr \
+  --agree-tos \
+  --redirect \
+  --non-interactive</pre>
+
+      <p style="margin-top:14px">Certbot va :</p>
+      <ul style="padding-left:20px;color:#444;font-size:.95rem;margin-top:6px">
+        <li>Créer un défi HTTP-01 pour prouver la propriété du domaine</li>
+        <li>Obtenir le certificat auprès de Let's Encrypt</li>
+        <li>Modifier la configuration Apache pour activer HTTPS</li>
+        <li>Ajouter une redirection automatique HTTP → HTTPS</li>
+        <li>Placer les certificats dans <code>/etc/letsencrypt/live/nextcloud.mondomaine.fr/</code></li>
+      </ul>
+
+      <div class="code-label">Vérifier que Apache redémarre bien avec le certificat</div>
+<pre><span class="cmd">sudo</span> systemctl status httpd</pre>
+    </div>
+
+    <div class="card">
+      <h3>Étape 4 – Activer le renouvellement automatique <span class="badge">SSH</span></h3>
+      <p>Les certificats Let's Encrypt expirent au bout de <strong>90 jours</strong>.
+      Certbot installe un timer systemd qui renouvelle automatiquement avant expiration.</p>
+<pre><span class="comment"># Activer le timer de renouvellement automatique</span>
+<span class="cmd">sudo</span> systemctl enable --now certbot-renew.timer
+
+<span class="comment"># Vérifier que le timer est actif</span>
+<span class="cmd">sudo</span> systemctl status certbot-renew.timer
+
+<span class="comment"># Tester le renouvellement à blanc (sans réellement renouveler)</span>
+<span class="cmd">sudo</span> certbot renew --dry-run</pre>
+    </div>
+
+    <div class="card">
+      <h3>Étape 5 – Mettre à jour la configuration Nextcloud <span class="badge">SSH</span></h3>
+      <p>Nextcloud doit être informé du nouveau protocole et du nom de domaine.</p>
+<pre><span class="comment"># Indiquer à Nextcloud d'utiliser HTTPS pour générer ses URLs</span>
+<span class="cmd">sudo</span> -u apache php /var/www/html/nextcloud/occ \
+  config:system:set overwriteprotocol --value="https"
+
+<span class="comment"># Ajouter le nom de domaine aux domaines de confiance</span>
+<span class="cmd">sudo</span> -u apache php /var/www/html/nextcloud/occ \
+  config:system:set trusted_domains 2 \
+  --value="nextcloud.mondomaine.fr"</pre>
+
+      <div class="alert success">
+        <span class="icon">✓</span>
+        <span>Nextcloud est maintenant accessible en HTTPS.
+        Tester dans un navigateur : <code>https://nextcloud.mondomaine.fr</code>
+        — le cadenas vert doit apparaître.</span>
+      </div>
+    </div>
+
+    <div class="alert warning">
+      <span class="icon">⚠</span>
+      <span>Let's Encrypt limite à <strong>5 certificats par domaine par semaine</strong>.
+      Pour les tests, ajouter le flag <code>--staging</code> à la commande certbot
+      (le certificat sera invalide mais la limite ne s'applique pas).</span>
+    </div>
+  </section>
+
+  <!-- ====================================================
+       3. CLOUDWATCH
+  ===================================================== -->
+  <section id="cloudwatch">
+    <h2>3. Supervision avec Amazon CloudWatch</h2>
+    <p class="section-intro">
+      CloudWatch collecte des métriques, déclenche des alarmes et envoie des notifications.
+      La procédure se déroule en deux parties : installation de l'agent CloudWatch
+      sur l'EC2 (via SSH) puis création des alarmes et du tableau de bord
+      dans la <strong>console AWS</strong>.
+    </p>
+
+    <!-- PARTIE A : AGENT -->
+    <div class="card">
+      <h3>Partie A – Installer l'agent CloudWatch sur l'EC2 <span class="badge">SSH</span></h3>
+      <p>
+        AWS collecte nativement le CPU et le réseau de l'EC2, mais
+        <strong>pas la RAM ni l'espace disque</strong>.
+        L'agent CloudWatch est nécessaire pour remonter ces métriques.
+      </p>
+
+      <div class="code-label">Se connecter en SSH</div>
+<pre><span class="cmd">ssh</span> -i nextcloud-key.pem ec2-user@&lt;IP_EC2&gt;</pre>
+
+      <div class="code-label">Installer l'agent CloudWatch</div>
+<pre><span class="cmd">sudo</span> dnf install -y amazon-cloudwatch-agent</pre>
+
+      <div class="code-label">Créer le fichier de configuration de l'agent</div>
+<pre><span class="cmd">sudo</span> tee /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json &lt;&lt; 'EOF'
+{
+  "metrics": {
+    "namespace": "Nextcloud/System",
+    "metrics_collected": {
+      "mem": {
+        "measurement": ["mem_used_percent"],
+        "metrics_collection_interval": 60
+      },
+      "disk": {
+        "measurement": ["disk_used_percent"],
+        "resources": ["/"],
+        "metrics_collection_interval": 60
+      }
+    }
+  },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/var/log/userdata.log",
+            "log_group_name": "/nextcloud/userdata",
+            "log_stream_name": "{instance_id}"
+          },
+          {
+            "file_path": "/var/log/httpd/nextcloud_error.log",
+            "log_group_name": "/nextcloud/apache-errors",
+            "log_stream_name": "{instance_id}"
+          }
+        ]
+      }
+    }
+  }
+}
+EOF</pre>
+
+      <div class="code-label">Démarrer l'agent et l'activer au démarrage</div>
+<pre><span class="comment"># Charger la configuration et démarrer l'agent</span>
+<span class="cmd">sudo</span> /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+  -a fetch-config \
+  -m ec2 \
+  -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json \
+  -s
+
+<span class="comment"># Activer le démarrage automatique</span>
+<span class="cmd">sudo</span> systemctl enable amazon-cloudwatch-agent
+
+<span class="comment"># Vérifier que l'agent tourne</span>
+<span class="cmd">sudo</span> systemctl status amazon-cloudwatch-agent</pre>
+
+      <div class="alert info">
+        <span class="icon">ℹ</span>
+        <span>Les métriques <code>mem_used_percent</code> et <code>disk_used_percent</code>
+        apparaissent dans CloudWatch sous le namespace <code>Nextcloud/System</code>
+        après 1 à 2 minutes.</span>
+      </div>
+    </div>
+
+    <!-- PARTIE B : DROITS IAM -->
+    <div class="card">
+      <h3>Partie B – Vérifier les droits IAM de l'EC2 <span class="badge">Console AWS</span></h3>
+      <p>
+        L'agent CloudWatch a besoin de droits pour envoyer des métriques et des logs.
+        Ces droits doivent être présents dans le rôle IAM attaché à l'instance.
+      </p>
+      <ul class="steps">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-body">
+            Aller dans :
+            <span class="nav">IAM <span class="sep">›</span> Rôles <span class="sep">›</span> nextcloud-sio-ec2-role</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-body">
+            Cliquer sur <strong>« Attacher des politiques »</strong>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-body">
+            Rechercher et sélectionner la politique gérée <strong><code>CloudWatchAgentServerPolicy</code></strong>.
+            Cliquer sur <strong>« Attacher les politiques »</strong>.
+          </div>
+        </li>
+      </ul>
+      <div class="alert warning">
+        <span class="icon">⚠</span>
+        <span>Sans ce rôle, l'agent CloudWatch ne peut pas envoyer de données et
+        affichera des erreurs de type <code>NoCredentialProviders</code> dans ses logs.</span>
+      </div>
+    </div>
+
+    <!-- PARTIE C : SNS -->
+    <div class="card">
+      <h3>Partie C – Créer un topic SNS pour les alertes email <span class="badge">Console AWS</span></h3>
+      <ul class="steps">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-body">
+            Aller dans :
+            <span class="nav">Simple Notification Service (SNS) <span class="sep">›</span> Rubriques <span class="sep">›</span> Créer une rubrique</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-body">
+            Type : <strong>Standard</strong>.
+            Nom : <code>nextcloud-sio-alerts</code>.
+            Cliquer sur <strong>« Créer une rubrique »</strong>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-body">
+            Dans la rubrique créée, cliquer sur <strong>« Créer un abonnement »</strong>.
+            Protocole : <strong>Email</strong>.
+            Point de terminaison : <code>votre@email.fr</code>.
+            Cliquer sur <strong>« Créer un abonnement »</strong>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Confirmer l'abonnement</strong> en cliquant sur le lien reçu par email.
+            Sans cette confirmation, aucune alerte ne sera envoyée.
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- PARTIE D : ALARMES -->
+    <div class="card">
+      <h3>Partie D – Créer les alarmes CloudWatch <span class="badge">Console AWS</span></h3>
+      <p>Répéter la procédure suivante pour chaque alarme souhaitée.</p>
+
+      <ul class="steps">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-body">
+            Aller dans :
+            <span class="nav">CloudWatch <span class="sep">›</span> Alarmes <span class="sep">›</span> Créer une alarme</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-body">
+            Cliquer sur <strong>« Sélectionner une métrique »</strong> et choisir la métrique selon le tableau ci-dessous.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-body">
+            Définir la <strong>condition</strong> (seuil), la <strong>période</strong> et le nombre de points de données.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">4</div>
+          <div class="step-body">
+            Dans <strong>« Actions »</strong> : choisir <em>« En alarme »</em>,
+            puis sélectionner le topic SNS <code>nextcloud-sio-alerts</code>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">5</div>
+          <div class="step-body">
+            Donner un nom à l'alarme et cliquer sur <strong>« Créer une alarme »</strong>.
+          </div>
+        </li>
+      </ul>
+
+      <table style="margin-top:20px">
+        <thead>
+          <tr>
+            <th>Alarme</th>
+            <th>Namespace / Métrique</th>
+            <th>Dimension</th>
+            <th>Seuil</th>
+            <th>Période</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>CPU EC2 élevé</td>
+            <td><code>AWS/EC2</code> › <code>CPUUtilization</code></td>
+            <td>InstanceId = nextcloud-sio-server</td>
+            <td>> 80 %</td>
+            <td>5 min × 2</td>
+          </tr>
+          <tr>
+            <td>RAM élevée</td>
+            <td><code>Nextcloud/System</code> › <code>mem_used_percent</code></td>
+            <td>InstanceId = nextcloud-sio-server</td>
+            <td>> 85 %</td>
+            <td>5 min × 2</td>
+          </tr>
+          <tr>
+            <td>Disque plein</td>
+            <td><code>Nextcloud/System</code> › <code>disk_used_percent</code></td>
+            <td>path = /, InstanceId = …</td>
+            <td>> 90 %</td>
+            <td>5 min × 1</td>
+          </tr>
+          <tr>
+            <td>CPU RDS élevé</td>
+            <td><code>AWS/RDS</code> › <code>CPUUtilization</code></td>
+            <td>DBInstanceIdentifier = nextcloud-sio-db</td>
+            <td>> 70 %</td>
+            <td>5 min × 2</td>
+          </tr>
+          <tr>
+            <td>Espace RDS faible</td>
+            <td><code>AWS/RDS</code> › <code>FreeStorageSpace</code></td>
+            <td>DBInstanceIdentifier = nextcloud-sio-db</td>
+            <td>< 5 Go (5 368 709 120 octets)</td>
+            <td>5 min × 1</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PARTIE E : DASHBOARD -->
+    <div class="card">
+      <h3>Partie E – Créer un tableau de bord CloudWatch <span class="badge">Console AWS</span></h3>
+      <ul class="steps">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-body">
+            Aller dans :
+            <span class="nav">CloudWatch <span class="sep">›</span> Tableaux de bord <span class="sep">›</span> Créer un tableau de bord</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-body">
+            Nommer le tableau de bord : <code>Nextcloud-Supervision</code>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-body">
+            Ajouter des <strong>widgets</strong> un par un (bouton <em>« + »</em>) :
+            <br>
+            <table style="margin-top:10px">
+              <thead><tr><th>Widget</th><th>Type</th><th>Métrique</th></tr></thead>
+              <tbody>
+                <tr><td>CPU EC2</td><td>Courbe</td><td><code>AWS/EC2 › CPUUtilization</code></td></tr>
+                <tr><td>RAM</td><td>Jauge</td><td><code>Nextcloud/System › mem_used_percent</code></td></tr>
+                <tr><td>Disque</td><td>Jauge</td><td><code>Nextcloud/System › disk_used_percent</code></td></tr>
+                <tr><td>CPU RDS</td><td>Courbe</td><td><code>AWS/RDS › CPUUtilization</code></td></tr>
+                <tr><td>État des alarmes</td><td>Alarmes</td><td>Toutes les alarmes du projet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">4</div>
+          <div class="step-body">
+            Cliquer sur <strong>« Enregistrer le tableau de bord »</strong>.
+          </div>
+        </li>
+      </ul>
+      <div class="alert success">
+        <span class="icon">✓</span>
+        <span>Le tableau de bord est accessible à tout moment depuis la console CloudWatch
+        et offre une vue centralisée de l'état de l'infrastructure Nextcloud.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- SYNTHÈSE -->
+  <section id="synthese">
+    <h2>Récapitulatif des procédures</h2>
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Évolution</th>
+            <th>Où ça se passe</th>
+            <th>Durée estimée</th>
+            <th>Prérequis</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Elastic IP</strong></td>
+            <td>Console AWS uniquement</td>
+            <td>~5 min</td>
+            <td>–</td>
+          </tr>
+          <tr>
+            <td><strong>TLS/SSL</strong></td>
+            <td>Console AWS (SG) + SSH (Certbot)</td>
+            <td>~15 min</td>
+            <td>Elastic IP + Nom de domaine</td>
+          </tr>
+          <tr>
+            <td><strong>CloudWatch</strong></td>
+            <td>SSH (agent) + Console AWS (alarmes, SNS)</td>
+            <td>~20 min</td>
+            <td>Rôle IAM avec <code>CloudWatchAgentServerPolicy</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Hugo Léonardi &nbsp;·&nbsp; BTS SIO SISR – Aurlom &nbsp;·&nbsp; 2024–2026
+  &nbsp;·&nbsp; Procédures manuelles – Nextcloud / AWS
+</footer>
+
+</body>
+</html>

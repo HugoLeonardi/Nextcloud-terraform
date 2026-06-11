@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Évolutions – Déploiement Nextcloud sur AWS</title>
+  <style>
+    :root {
+      --primary:   #0f4c81;
+      --accent:    #1a7fc1;
+      --light:     #e8f4fd;
+      --success:   #1e7e34;
+      --bg:        #f5f7fa;
+      --border:    #dde3ea;
+      --code-bg:   #1e2228;
+      --code-fg:   #abb2bf;
+      --radius:    8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      color: #222;
+      line-height: 1.7;
+    }
+
+    /* ---- HEADER ---- */
+    header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      color: #fff;
+      padding: 48px 60px 40px;
+    }
+    header .label {
+      font-size: .8rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      opacity: .75;
+      margin-bottom: 10px;
+    }
+    header h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+    header .subtitle { font-size: 1.05rem; opacity: .85; }
+    header .meta {
+      display: flex;
+      gap: 32px;
+      margin-top: 28px;
+      font-size: .88rem;
+      opacity: .8;
+    }
+    header .meta span::before { content: '• '; }
+
+    /* ---- LAYOUT ---- */
+    .container { max-width: 960px; margin: 0 auto; padding: 48px 24px; }
+
+    /* ---- TOC ---- */
+    .toc {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 32px;
+      margin-bottom: 48px;
+    }
+    .toc h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: .08em; color: var(--primary); margin-bottom: 16px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin-bottom: 6px; }
+    .toc a { color: var(--accent); text-decoration: none; font-weight: 500; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* ---- SECTION ---- */
+    section { margin-bottom: 64px; }
+    section h2 {
+      font-size: 1.5rem;
+      color: var(--primary);
+      border-left: 4px solid var(--accent);
+      padding-left: 14px;
+      margin-bottom: 8px;
+    }
+    .section-intro {
+      color: #555;
+      margin-bottom: 28px;
+      font-size: .97rem;
+    }
+
+    /* ---- CARDS ---- */
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      margin-bottom: 24px;
+    }
+    .card h3 {
+      font-size: 1.1rem;
+      color: var(--primary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card h3 .badge {
+      background: var(--light);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      font-size: .72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .card p { color: #444; margin-bottom: 12px; font-size: .95rem; }
+    .card ul { padding-left: 20px; color: #444; font-size: .95rem; }
+    .card ul li { margin-bottom: 6px; }
+
+    /* ---- CODE BLOCKS ---- */
+    pre {
+      background: var(--code-bg);
+      color: var(--code-fg);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      font-size: .85rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      margin-top: 16px;
+      margin-bottom: 4px;
+    }
+    pre .comment  { color: #5c6370; font-style: italic; }
+    pre .keyword  { color: #c678dd; }
+    pre .string   { color: #98c379; }
+    pre .var      { color: #e06c75; }
+    pre .fn       { color: #61afef; }
+    pre .num      { color: #d19a66; }
+    .code-label {
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #888;
+      margin-top: 20px;
+      margin-bottom: 4px;
+    }
+
+    /* ---- SCHEMA ---- */
+    .schema {
+      background: var(--code-bg);
+      color: #abb2bf;
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      font-family: monospace;
+      font-size: .85rem;
+      line-height: 1.7;
+      margin-top: 16px;
+      white-space: pre;
+    }
+
+    /* ---- ALERTS ---- */
+    .alert {
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      font-size: .9rem;
+      margin-top: 16px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .alert.info    { background: #e8f4fd; border-left: 4px solid var(--accent); color: #1a4a6b; }
+    .alert.warning { background: #fff8e1; border-left: 4px solid #f59e0b; color: #7c5b00; }
+    .alert.success { background: #ecfdf5; border-left: 4px solid #10b981; color: #065f46; }
+    .alert .icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+
+    /* ---- TABLE ---- */
+    table { width: 100%; border-collapse: collapse; font-size: .92rem; margin-top: 16px; }
+    th {
+      background: var(--primary);
+      color: #fff;
+      text-align: left;
+      padding: 10px 14px;
+      font-weight: 600;
+    }
+    td { padding: 9px 14px; border-bottom: 1px solid var(--border); color: #444; }
+    tr:nth-child(even) td { background: #f9fafb; }
+
+    /* ---- STEP TIMELINE ---- */
+    .steps { list-style: none; padding-left: 0; margin-top: 16px; }
+    .steps li {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 18px;
+      align-items: flex-start;
+    }
+    .steps .step-num {
+      flex-shrink: 0;
+      width: 30px; height: 30px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: .85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .steps .step-body { flex: 1; padding-top: 4px; font-size: .95rem; color: #333; }
+    .steps .step-body strong { color: var(--primary); }
+
+    /* ---- FOOTER ---- */
+    footer {
+      text-align: center;
+      padding: 32px;
+      font-size: .82rem;
+      color: #aaa;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ==================== HEADER ==================== -->
+<header>
+  <div class="label">BTS SIO – Option SISR &nbsp;|&nbsp; Infrastructure as Code</div>
+  <h1>Évolutions de l'infrastructure Nextcloud / AWS</h1>
+  <div class="subtitle">Terraform – Déploiement automatisé d'un cloud privé sur Amazon Web Services</div>
+  <div class="meta">
+    <span>Hugo Léonardi</span>
+    <span>Région : eu-west-3 (Paris)</span>
+    <span>Provider : AWS 5.x / Terraform ≥ 1.0</span>
+  </div>
+</header>
+
+<!-- ==================== CONTAINER ==================== -->
+<div class="container">
+
+  <!-- TABLE DES MATIÈRES -->
+  <div class="toc">
+    <h2>Sommaire</h2>
+    <ol>
+      <li><a href="#eip">Adresse IP Élastique (Elastic IP)</a></li>
+      <li><a href="#tls">Certificat TLS/SSL avec Let's Encrypt</a></li>
+      <li><a href="#cloudwatch">Supervision avec Amazon CloudWatch</a></li>
+    </ol>
+  </div>
+
+  <!-- ==================== 1. ELASTIC IP ==================== -->
+  <section id="eip">
+    <h2>1. Adresse IP Élastique (Elastic IP)</h2>
+    <p class="section-intro">
+      Par défaut, l'instance EC2 reçoit une adresse IP publique <strong>dynamique</strong> :
+      elle change à chaque redémarrage. Une <strong>Elastic IP</strong> est une adresse IPv4 publique
+      fixe allouée sur le compte AWS et attachée à l'instance, garantissant que l'URL
+      Nextcloud reste identique même après un arrêt/relance.
+    </p>
+
+    <div class="card">
+      <h3>Pourquoi c'est nécessaire <span class="badge">Contexte</span></h3>
+      <ul>
+        <li>Sans Elastic IP, chaque redémarrage de l'EC2 change l'IP → Nextcloud devient inaccessible.</li>
+        <li>Prérequis indispensable pour configurer un nom de domaine DNS pointant vers le serveur.</li>
+        <li>Prérequis pour un certificat TLS valide (le certificat est lié à un domaine, qui doit pointer vers une IP fixe).</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Ressources Terraform à ajouter <span class="badge">Code</span></h3>
+      <p>Deux ressources suffisent : l'allocation de l'EIP et son association à l'instance EC2.</p>
+      <div class="code-label">À ajouter dans main.tf</div>
+<pre><span class="comment"># Alloue une adresse IPv4 publique fixe sur le compte AWS</span>
+<span class="keyword">resource</span> <span class="string">"aws_eip"</span> <span class="string">"nextcloud"</span> {
+  domain = <span class="string">"vpc"</span>
+
+  tags = {
+    Name    = <span class="string">"${var.project_name}-eip"</span>
+    Project = <span class="var">var</span>.project_name
+  }
+}
+
+<span class="comment"># Associe l'EIP à l'instance EC2 Nextcloud</span>
+<span class="keyword">resource</span> <span class="string">"aws_eip_association"</span> <span class="string">"nextcloud"</span> {
+  instance_id   = <span class="var">aws_instance</span>.nextcloud.id
+  allocation_id = <span class="var">aws_eip</span>.nextcloud.id
+}</pre>
+
+      <div class="code-label">Modifier outputs.tf pour exposer l'IP fixe</div>
+<pre><span class="keyword">output</span> <span class="string">"nextcloud_url"</span> {
+  description = <span class="string">"URL publique fixe de Nextcloud"</span>
+  value       = <span class="string">"http://${aws_eip.nextcloud.public_ip}"</span>
+}
+
+<span class="keyword">output</span> <span class="string">"ssh_command"</span> {
+  description = <span class="string">"Commande SSH avec l'IP fixe"</span>
+  value = <span class="string">"ssh -i ~/.ssh/nextcloud-key.pem ec2-user@${aws_eip.nextcloud.public_ip}"</span>
+}</pre>
+    </div>
+
+    <div class="card">
+      <h3>Points d'attention <span class="badge">Important</span></h3>
+      <ul>
+        <li>Une Elastic IP <strong>non associée</strong> à une instance est facturée (~0,005 $/heure).</li>
+        <li>La ressource <code>aws_eip_association</code> doit être déclarée <strong>après</strong> <code>aws_instance</code> — Terraform gère la dépendance automatiquement via la référence <code>aws_instance.nextcloud.id</code>.</li>
+        <li>Le <code>trusted_domains</code> dans Nextcloud devra être mis à jour avec la nouvelle IP fixe (géré via le userdata).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ==================== 2. TLS/SSL ==================== -->
+  <section id="tls">
+    <h2>2. Certificat TLS/SSL avec Let's Encrypt</h2>
+    <p class="section-intro">
+      Actuellement, Nextcloud est accessible en HTTP (port 80) : les données transitent en clair.
+      Un certificat TLS permet de passer en HTTPS (port 443), chiffrant les échanges entre
+      le navigateur et le serveur. Let's Encrypt délivre des certificats gratuits et automatiquement
+      renouvelables via l'outil <strong>Certbot</strong>.
+    </p>
+
+    <div class="alert info">
+      <span class="icon">ℹ</span>
+      <span>Un nom de domaine est obligatoire pour obtenir un certificat Let's Encrypt.
+      Let's Encrypt ne délivre pas de certificats pour des adresses IP nues.
+      L'Elastic IP (évolution 1) est donc un prérequis.</span>
+    </div>
+
+    <div class="card">
+      <h3>Architecture cible <span class="badge">Schéma</span></h3>
+<div class="schema">Internet
+   │
+   ├── Port 80 (HTTP)  ──▶  Redirection automatique vers HTTPS
+   │
+   └── Port 443 (HTTPS) ──▶  Apache + certificat Let's Encrypt
+                                        │
+                                        ▼
+                              Nextcloud (PHP/Apache)
+                                        │
+                              ┌─────────┴──────────┐
+                              ▼                     ▼
+                        RDS MySQL             S3 Bucket
+                       (privé VPC)          (chiffré AES)</div>
+    </div>
+
+    <div class="card">
+      <h3>Étapes d'installation <span class="badge">Procédure</span></h3>
+      <ul class="steps">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Ajouter un enregistrement DNS</strong> – Créer un enregistrement de type A
+            dans la zone DNS du domaine, pointant vers l'Elastic IP de l'instance EC2.
+            Exemple : <code>nextcloud.mondomaine.fr → 13.37.xx.xx</code>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Ouvrir le port 443</strong> – Ajouter une règle <em>ingress</em> HTTPS
+            au Security Group EC2 (déjà présente dans le code actuel).
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Installer Certbot</strong> – Via le userdata ou manuellement en SSH
+            sur l'instance.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Émettre le certificat</strong> – Certbot communique avec les serveurs
+            Let's Encrypt, prouve la propriété du domaine (challenge HTTP-01), puis configure
+            automatiquement Apache.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <strong>Renouvellement automatique</strong> – Certbot ajoute une tâche cron
+            qui renouvelle le certificat avant son expiration (durée de vie : 90 jours).
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Commandes à intégrer dans userdata.sh <span class="badge">Code</span></h3>
+<pre><span class="comment"># Installation de Certbot et son module Apache</span>
+dnf install -y certbot python3-certbot-apache
+
+<span class="comment"># Émission du certificat et configuration Apache automatique
+# DOMAIN et EMAIL doivent être injectés par Terraform (templatefile)</span>
+certbot --apache \
+  --non-interactive \
+  --agree-tos \
+  --email <span class="string">"${admin_email}"</span> \
+  --domain <span class="string">"${domain_name}"</span> \
+  --redirect    <span class="comment"># Force la redirection HTTP → HTTPS</span>
+
+<span class="comment"># Activation du renouvellement automatique</span>
+systemctl enable --now certbot-renew.timer</pre>
+
+      <div class="code-label">Nouvelles variables à ajouter dans variables.tf</div>
+<pre><span class="keyword">variable</span> <span class="string">"domain_name"</span> {
+  description = <span class="string">"Nom de domaine pointant vers l'Elastic IP"</span>
+  type        = string
+  <span class="comment"># Exemple : "nextcloud.mondomaine.fr"</span>
+}
+
+<span class="keyword">variable</span> <span class="string">"admin_email"</span> {
+  description = <span class="string">"Email pour les notifications Let's Encrypt"</span>
+  type        = string
+}</pre>
+    </div>
+
+    <div class="card">
+      <h3>Configuration Nextcloud après certificat <span class="badge">Code</span></h3>
+      <p>Nextcloud doit être informé du changement de protocole pour générer des URLs correctes :</p>
+<pre><span class="comment"># Indiquer à Nextcloud d'utiliser HTTPS</span>
+sudo -u apache php occ config:system:set overwriteprotocol \
+  --value=<span class="string">"https"</span>
+
+<span class="comment"># Mettre à jour le trusted_domain avec le nom de domaine</span>
+sudo -u apache php occ config:system:set \
+  trusted_domains 2 \
+  --value=<span class="string">"${domain_name}"</span></pre>
+    </div>
+
+    <div class="alert warning">
+      <span class="icon">⚠</span>
+      <span>Let's Encrypt impose une limite de <strong>5 certificats par domaine par semaine</strong>.
+      En environnement de test, utiliser le flag <code>--staging</code> pour éviter d'atteindre la limite.</span>
+    </div>
+  </section>
+
+  <!-- ==================== 3. CLOUDWATCH ==================== -->
+  <section id="cloudwatch">
+    <h2>3. Supervision avec Amazon CloudWatch</h2>
+    <p class="section-intro">
+      AWS CloudWatch permet de collecter des métriques (CPU, RAM, disque, réseau),
+      de créer des tableaux de bord et de déclencher des <strong>alarmes</strong>
+      (notification par email, redémarrage automatique…) lorsqu'un seuil est dépassé.
+      L'agent CloudWatch doit être installé sur l'EC2 pour remonter les métriques système
+      (la RAM et le disque ne sont pas collectés nativement par AWS).
+    </p>
+
+    <div class="card">
+      <h3>Métriques supervisées <span class="badge">Périmètre</span></h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Métrique</th>
+            <th>Source</th>
+            <th>Seuil d'alerte conseillé</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>CPU (utilisation %)</td><td>EC2 natif</td><td>&gt; 80 % pendant 5 min</td></tr>
+          <tr><td>RAM (utilisation %)</td><td>Agent CloudWatch</td><td>&gt; 85 %</td></tr>
+          <tr><td>Disque (espace libre)</td><td>Agent CloudWatch</td><td>&lt; 2 Go</td></tr>
+          <tr><td>Connexions réseau entrantes</td><td>EC2 natif</td><td>Anomalie détectée</td></tr>
+          <tr><td>CPU RDS</td><td>RDS natif</td><td>&gt; 70 % pendant 10 min</td></tr>
+          <tr><td>Connexions RDS actives</td><td>RDS natif</td><td>&gt; 50 connexions</td></tr>
+          <tr><td>Espace stockage RDS</td><td>RDS natif</td><td>&lt; 5 Go libres</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Modifications Terraform <span class="badge">Code</span></h3>
+      <p>Ajouter les droits CloudWatch au rôle IAM existant de l'EC2, puis déclarer les alarmes.</p>
+
+      <div class="code-label">1 – Étendre la politique IAM de l'EC2 (main.tf)</div>
+<pre><span class="keyword">resource</span> <span class="string">"aws_iam_role_policy"</span> <span class="string">"ec2_cloudwatch_policy"</span> {
+  name = <span class="string">"${var.project_name}-cloudwatch-policy"</span>
+  role = <span class="var">aws_iam_role</span>.ec2_s3_role.id
+
+  policy = <span class="fn">jsonencode</span>({
+    Version = <span class="string">"2012-10-17"</span>
+    Statement = [{
+      Effect = <span class="string">"Allow"</span>
+      Action = [
+        <span class="string">"cloudwatch:PutMetricData"</span>,
+        <span class="string">"cloudwatch:GetMetricStatistics"</span>,
+        <span class="string">"cloudwatch:ListMetrics"</span>,
+        <span class="string">"logs:CreateLogGroup"</span>,
+        <span class="string">"logs:CreateLogStream"</span>,
+        <span class="string">"logs:PutLogEvents"</span>,
+        <span class="string">"ec2:DescribeVolumes"</span>,
+        <span class="string">"ec2:DescribeTags"</span>
+      ]
+      Resource = <span class="string">"*"</span>
+    }]
+  })
+}</pre>
+
+      <div class="code-label">2 – Alarme CPU EC2 (main.tf)</div>
+<pre><span class="keyword">resource</span> <span class="string">"aws_cloudwatch_metric_alarm"</span> <span class="string">"cpu_high"</span> {
+  alarm_name          = <span class="string">"${var.project_name}-cpu-high"</span>
+  comparison_operator = <span class="string">"GreaterThanThreshold"</span>
+  evaluation_periods  = <span class="num">2</span>
+  metric_name         = <span class="string">"CPUUtilization"</span>
+  namespace           = <span class="string">"AWS/EC2"</span>
+  period              = <span class="num">300</span>   <span class="comment"># 5 minutes</span>
+  statistic           = <span class="string">"Average"</span>
+  threshold           = <span class="num">80</span>
+  alarm_description   = <span class="string">"CPU EC2 dépasse 80% pendant 10 minutes"</span>
+  alarm_actions       = [<span class="var">aws_sns_topic</span>.alerts.arn]
+
+  dimensions = {
+    InstanceId = <span class="var">aws_instance</span>.nextcloud.id
+  }
+}
+
+<span class="keyword">resource</span> <span class="string">"aws_cloudwatch_metric_alarm"</span> <span class="string">"rds_cpu_high"</span> {
+  alarm_name          = <span class="string">"${var.project_name}-rds-cpu-high"</span>
+  comparison_operator = <span class="string">"GreaterThanThreshold"</span>
+  evaluation_periods  = <span class="num">2</span>
+  metric_name         = <span class="string">"CPUUtilization"</span>
+  namespace           = <span class="string">"AWS/RDS"</span>
+  period              = <span class="num">300</span>
+  statistic           = <span class="string">"Average"</span>
+  threshold           = <span class="num">70</span>
+  alarm_actions       = [<span class="var">aws_sns_topic</span>.alerts.arn]
+
+  dimensions = {
+    DBInstanceIdentifier = <span class="var">aws_db_instance</span>.nextcloud.id
+  }
+}</pre>
+
+      <div class="code-label">3 – Topic SNS pour les notifications par email (main.tf)</div>
+<pre><span class="keyword">resource</span> <span class="string">"aws_sns_topic"</span> <span class="string">"alerts"</span> {
+  name = <span class="string">"${var.project_name}-alerts"</span>
+}
+
+<span class="keyword">resource</span> <span class="string">"aws_sns_topic_subscription"</span> <span class="string">"email_alert"</span> {
+  topic_arn = <span class="var">aws_sns_topic</span>.alerts.arn
+  protocol  = <span class="string">"email"</span>
+  endpoint  = <span class="var">var</span>.alert_email
+}</pre>
+
+      <div class="code-label">4 – Nouvelle variable (variables.tf)</div>
+<pre><span class="keyword">variable</span> <span class="string">"alert_email"</span> {
+  description = <span class="string">"Email de réception des alertes CloudWatch"</span>
+  type        = string
+}</pre>
+    </div>
+
+    <div class="card">
+      <h3>Installation de l'agent CloudWatch sur l'EC2 <span class="badge">Code</span></h3>
+      <p>
+        La RAM et l'espace disque ne sont pas remontés nativement par AWS.
+        L'agent CloudWatch doit être installé via le userdata pour les collecter.
+      </p>
+<pre><span class="comment"># Téléchargement et installation de l'agent CloudWatch</span>
+dnf install -y amazon-cloudwatch-agent
+
+<span class="comment"># Configuration minimale : collecte RAM + disque</span>
+cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json &lt;&lt; 'CWCONF'
+{
+  "metrics": {
+    "namespace": "Nextcloud/System",
+    "metrics_collected": {
+      "mem": {
+        "measurement": ["mem_used_percent"],
+        "metrics_collection_interval": 60
+      },
+      "disk": {
+        "measurement": ["disk_used_percent"],
+        "resources": ["/"],
+        "metrics_collection_interval": 60
+      }
+    }
+  },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [{
+          "file_path": "/var/log/userdata.log",
+          "log_group_name": "/nextcloud/userdata",
+          "log_stream_name": "{instance_id}"
+        }]
+      }
+    }
+  }
+}
+CWCONF
+
+<span class="comment"># Démarrage de l'agent</span>
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+  -a fetch-config \
+  -m ec2 \
+  -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json \
+  -s
+
+systemctl enable amazon-cloudwatch-agent</pre>
+    </div>
+
+    <div class="card">
+      <h3>Tableau de bord CloudWatch <span class="badge">Code</span></h3>
+      <p>Un dashboard centralisé consultable dans la console AWS.</p>
+<pre><span class="keyword">resource</span> <span class="string">"aws_cloudwatch_dashboard"</span> <span class="string">"nextcloud"</span> {
+  dashboard_name = <span class="string">"${var.project_name}-dashboard"</span>
+
+  dashboard_body = <span class="fn">jsonencode</span>({
+    widgets = [
+      {
+        type = <span class="string">"metric"</span>
+        properties = {
+          title  = <span class="string">"CPU EC2"</span>
+          period = <span class="num">300</span>
+          metrics = [[<span class="string">"AWS/EC2"</span>, <span class="string">"CPUUtilization"</span>,
+                      <span class="string">"InstanceId"</span>, <span class="var">aws_instance</span>.nextcloud.id]]
+        }
+      },
+      {
+        type = <span class="string">"metric"</span>
+        properties = {
+          title  = <span class="string">"CPU RDS"</span>
+          period = <span class="num">300</span>
+          metrics = [[<span class="string">"AWS/RDS"</span>, <span class="string">"CPUUtilization"</span>,
+                      <span class="string">"DBInstanceIdentifier"</span>, <span class="var">aws_db_instance</span>.nextcloud.id]]
+        }
+      }
+    ]
+  })
+}</pre>
+    </div>
+
+    <div class="alert success">
+      <span class="icon">✓</span>
+      <span>
+        Après <code>terraform apply</code>, confirmer l'abonnement SNS en cliquant sur le lien
+        reçu par email – sans cette confirmation, les alertes ne sont pas envoyées.
+      </span>
+    </div>
+  </section>
+
+  <!-- ==================== SYNTHÈSE ==================== -->
+  <section id="synthese">
+    <h2>Synthèse des évolutions</h2>
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Évolution</th>
+            <th>Ressources Terraform ajoutées</th>
+            <th>Dépendance</th>
+            <th>Coût estimé / mois</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Elastic IP</strong></td>
+            <td><code>aws_eip</code>, <code>aws_eip_association</code></td>
+            <td>–</td>
+            <td>~0 € (gratuit si associée)</td>
+          </tr>
+          <tr>
+            <td><strong>TLS/SSL</strong></td>
+            <td>Certbot via userdata + 2 variables</td>
+            <td>Elastic IP + Nom de domaine</td>
+            <td>0 € (Let's Encrypt gratuit)</td>
+          </tr>
+          <tr>
+            <td><strong>CloudWatch</strong></td>
+            <td><code>aws_cloudwatch_metric_alarm</code> (×3), <code>aws_sns_topic</code>, <code>aws_cloudwatch_dashboard</code>, politique IAM</td>
+            <td>–</td>
+            <td>~1–2 € (métriques custom)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+
+<!-- ==================== FOOTER ==================== -->
+<footer>
+  Hugo Léonardi &nbsp;·&nbsp; BTS SIO SISR – Aurlom &nbsp;·&nbsp; 2024–2026
+  &nbsp;·&nbsp; Projet Nextcloud / AWS Terraform
+</footer>
+
+</body>
+</html>
